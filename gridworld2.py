@@ -53,7 +53,8 @@ class GridWorld2_8dir(object):#8dir
         self.boundary=boundary
         self.step_reward=-1;
         self.goal_reward=100;
-    
+        self.collision_reward=-1
+    	self.train=True
         self.reset()    
     def reset(self):
         while True:
@@ -63,8 +64,10 @@ class GridWorld2_8dir(object):#8dir
 		c=0
             self.init_place=(np.random.randint(c,self.width-c),np.random.randint(c,self.height-c))
             self.goal_place=(np.random.randint(c,self.width-c),np.random.randint(c,self.height-c))
-            #while self.goal_place==self.init_place:
-            #    self.goal_place=(np.random.randint(width),np.random.randint(height))
+            while self.goal_place==self.init_place:
+                self.goal_place=(np.random.randint(self.width),np.random.randint(self.height))
+	    if self.train:
+		break
             if (abs(self.init_place[0]-self.goal_place[0])+abs(self.init_place[1]-self.goal_place[1]))>math.sqrt((self.width-2*c)**2+(self.height-2*c)**2):
                 break
         #print(abs(self.init_place[0]-self.goal_place[0])+abs(self.init_place[1]-self.goal_place[1]))
@@ -120,16 +123,21 @@ class GridWorld2_8dir(object):#8dir
         #if meet obstacle, stop at origin place
         
         self.obstacles.move([self.place,self.goal_place])
-        
+        flag=0
         assert (0<=direction and direction<9)
 	if self.boundary is not True:
         	new_place=(max(min(self.place[0]+self.dir_list[direction][0],self.width-1),0),max(min(self.place[1]+self.dir_list[direction][1],self.height-1),0))
 	else:
 		new_place=(max(min(self.place[0]+self.dir_list[direction][0],self.width-2),1),max(min(self.place[1]+self.dir_list[direction][1],self.height-2),1))
+	if (self.place[0]+self.dir_list[direction][0]!=new_place[0]) or (self.place[1]+self.dir_list[direction][1]!=new_place[1]):# zhaung qiang le
+		self.total_reward+=self.collision_reward
+		flag=1
         if self.obstacles.checkCollision(new_place,self.obstacles.obstacles)==False:
             #print("here!")
             self.place=new_place
-            
+        else:
+	    if flag==0:
+		self.total_reward+=self.collision_reward   
         self.total_reward+=self.step_reward
         
         if self.place==self.goal_place:
@@ -210,18 +218,18 @@ class GridWorld2_8dir(object):#8dir
 
         plt.ylim((0, self.height))
         reward=status[0]
-	reward[s1,s2]=1
+	reward[s1][s2]=1
 	obstacle=status[1]
         x=np.arange(0, self.width, 0.01)
         for j in range(self.height):
             y1=np.array([j]*len(x))
             y2=np.array([j+1]*len(x))
             for i in range(self.width):
-                if obstacle[i,j]==0 and reward[i,j]==0:
+                if obstacle[i][j]==0 and reward[i,j]==0:
                     continue
-                if obstacle[i,j]==-1:
+                if obstacle[i][j]==1:
                     plt.fill_between(x,y1,y2,where=(i<=x) & (x<=i+1),facecolor='black')
-                elif reward[i,j] == self.goal_reward:
+                elif reward[i][j] == self.goal_reward:
                     plt.fill_between(x,y1,y2,where=(i<=x) & (x<=i+1),facecolor='red')
                 else:
                     plt.fill_between(x,y1,y2,where=(i<=x) & (x<i+1),facecolor='blue')

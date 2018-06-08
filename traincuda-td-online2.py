@@ -98,7 +98,8 @@ def update(experience,vin,oldvin,p=False):
 	# Update params
 	optimizer.step()
 	if p:
-		print(X[0],S1[0],S2[0],outputs[0],Qvalue[0],TDtarget[0])
+		print(outputs[0],Qvalue[0],TDtarget[0],Y[0].cpu().numpy())
+		grid.plot2(X[0].cpu().numpy(),int(S1[0].item()),int(S2[0].item()))	
 	return loss
 def evaluate(env,policy,iters=5000):
 	total_reward=0
@@ -120,19 +121,20 @@ if len(sys.argv)>1:
 with torch.cuda.device(device):
 	
 	VIN=myvin.VIN(myvin.Config()).cuda()
+	#VIN.load_state_dict(torch.load("model2020.pkl"))
 	print(VIN)
 	oldVIN=myvin.VIN(myvin.Config()).cuda()
 	oldVIN.load_state_dict(VIN.state_dict())
 	grid=gw.GridWorld2_8dir(8,8,nobstacle=4,moving=False)
 
-	maxStep=1000000
-	episodes=10000
+	maxStep=5000000
+	episodes=20000
 	gamma=0.99
 	Tmax=1000
 	replay=[]
 	max_exp=5000
 	learning_begin=1000
-	learning_freq=4
+	learning_freq=2
 	update_freq=200
 	e=0.1
 	experience=[]
@@ -147,7 +149,7 @@ with torch.cuda.device(device):
 	for k in range(episodes):    
 	    #step	
 	    #rewards=[]
-	    e=50.0/(k+50)
+	    #e=50.0/(k+50)
 	
 	    state,place,reward,over=grid.reset()
 	    #print("begin")
@@ -170,10 +172,10 @@ with torch.cuda.device(device):
 		    continue
 		if count%learning_freq==0 :
 		    loss=0
-		    for x in range(3):		
+		    for x in range(30):		
 		    	loss+=update(experience,VIN,oldVIN)#,True)
-		    if count%1000==0:
-			update(experience,VIN,oldVIN,True)
+		    #if count%1000==0:
+			#update(experience,VIN,oldVIN,True)
 		    #s+=loss
 		    #l+=1
 		    #if l%100==0:
@@ -198,7 +200,8 @@ with torch.cuda.device(device):
 	#evaluate(grid,randomWalk)
 	#evaluate(grid,vinPolicy)
 	    
-	    if k%200==20:   
+	    if k%100==20:  
+		torch.save(VIN.state_dict(),"model/model"+str(k)+".pkl") 
 		print("begin eval") 
 		iters=10
 		#print(evaluate(grid,vinPolicy,iters=100))#its a bad policy :(
@@ -207,13 +210,15 @@ with torch.cuda.device(device):
 		for x in range(iters):
 			state,place,reward,over=grid.reset()
 			#t=0
-			e=0
-			for y in range(Tmax):
+			e=50.0/(k+50)
+			for y in range(100):
 				action=vinPolicy(state,place)
 				next_state,next_place,reward,over=grid.step(action)
 				state=next_state
 				place=next_place
-				#t+=1
+				#if k==1020:
+					#print(outputs[0],Qvalue[0],TDtarget[0])
+				#	grid.plot2(state,place[0],place[1])
 				if over:
 					break
 			total_reward+=grid.total_reward+0.0
