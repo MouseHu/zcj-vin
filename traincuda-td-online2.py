@@ -12,11 +12,11 @@ import time
 import sys
 import itertools
 def randomWalk(status,place):
-    return np.random.randint(8)
+    return np.random.randint(9)
 
 def vinPolicy(status,place):
     if np.random.random()<e:
-        action=np.random.randint(8)
+        action=np.random.randint(9)
         return action
     S1=torch.Tensor([place[0]]).cuda()
     S2=torch.Tensor([place[1]]).cuda()
@@ -73,10 +73,13 @@ def update(experience,vin,oldvin,p=False):
 	X=torch.from_numpy(np.array(X)).float().cuda()#do not change it to torch.Tensor(X).float()
 	S1=torch.from_numpy(np.array(S1)).float().cuda()
 	S2=torch.from_numpy(np.array(S2)).float().cuda()
+	
+	oldX=torch.from_numpy(np.array(oldX)).float().cuda()
 	oldS1=torch.from_numpy(np.array(oldS1)).float().cuda()
 	oldS2=torch.from_numpy(np.array(oldS2)).float().cuda()
-	oldX=torch.from_numpy(np.array(oldX)).float().cuda()
+	
 	action=torch.from_numpy(np.array(action)).unsqueeze(dim=1).long().cuda()
+
 	Y=torch.from_numpy(np.array(Y)).float().cuda()
 	#Qmax=torch.Tensor([replay[x[0]][x[1]][4] for x in index]).float() .cuda()
 
@@ -89,14 +92,16 @@ def update(experience,vin,oldvin,p=False):
 	Qvalue=outputs.gather(index=action,dim=1).squeeze().cuda()
 	#print(Qvalue.shape)
 	#print(Y.shape)
+
 	TDtarget=(Y+gamma*Qmax).cuda()
+
 	criterion = torch.nn.MSELoss(size_average=False)
 	loss=criterion(Qvalue,Y).cuda()
 	optimizer = optim.RMSprop(VIN.parameters(), lr=myvin.Config().lr, eps=1e-6) 
 	optimizer.zero_grad()  
 	loss.backward()
-	# Update params
 	optimizer.step()
+
 	if p:
 		print(outputs[0],Qvalue[0],TDtarget[0],Y[0].cpu().numpy())
 		grid.plot2(X[0].cpu().numpy(),int(S1[0].item()),int(S2[0].item()))	
@@ -107,7 +112,7 @@ def evaluate(env,policy,iters=5000):
 	for i in range(iters):
 		status,place,reward,over=env.reset()
 		t=0
-		while over==False and t<2000:
+		while over==False and t<100:
 			action=policy(status,place)
 			status,place,reward,over=env.step(action)
 			t+=1
@@ -121,12 +126,14 @@ if len(sys.argv)>1:
 with torch.cuda.device(device):
 	
 	VIN=myvin.VIN(myvin.Config()).cuda()
-	VIN.load_state_dict(torch.load("model/vin_8x8.pth"))
+	#VIN.load_state_dict(torch.load("model/model1020.pkl"))
 	print(VIN)
 	oldVIN=myvin.VIN(myvin.Config()).cuda()
 	oldVIN.load_state_dict(VIN.state_dict())
-	grid=gw.GridWorld2_8dir(8,8,nobstacle=4,moving=False)
-
+	grid=gw.GridWorld2_8dir(8,8,nobstacle=4,moving=True)
+	e=0
+	#print(evaluate(grid,vinPolicy,1000))
+	print(evaluate(grid,randomWalk))
 	maxStep=5000000
 	episodes=20000
 	gamma=0.99
@@ -134,7 +141,7 @@ with torch.cuda.device(device):
 	replay=[]
 	max_exp=5000
 	learning_begin=1000
-	learning_freq=2
+	learning_freq=5
 	update_freq=200
 	e=0.1
 	experience=[]
@@ -149,7 +156,7 @@ with torch.cuda.device(device):
 	for k in range(episodes):    
 	    #step	
 	    #rewards=[]
-	    e=0.1/(k+1)
+	    e=100/(k+100)
 	
 	    state,place,reward,over=grid.reset()
 	    #print("begin")
@@ -172,8 +179,8 @@ with torch.cuda.device(device):
 		    continue
 		if count%learning_freq==0 :
 		    loss=0
-		    for x in range(30):		
-		    	loss+=update(experience,VIN,oldVIN)#,True)
+		    #for x in range(3):		
+		    loss+=update(experience,VIN,oldVIN)#,True)
 		    #if count%1000==0:
 			#update(experience,VIN,oldVIN,True)
 		    #s+=loss
@@ -201,31 +208,8 @@ with torch.cuda.device(device):
 	#evaluate(grid,vinPolicy)
 	    
 	    if k%100==20:  
-		torch.save(VIN.state_dict(),"model/model-8-"+str(k)+".pkl") 
+		torch.save(VIN.state_dict(),"model/moving-model-9-"+str(k)+".pkl") 
 		print("begin eval") 
-		iters=10
-		#print(evaluate(grid,vinPolicy,iters=100))#its a bad policy :(
-		total_reward=0
-		time2=time.time()
-		for x in range(iters):
-			state,place,reward,over=grid.reset()
-			#t=0
-			e=50.0/(k+50)
-			for y in range(100):
-				action=vinPolicy(state,place)
-				next_state,next_place,reward,over=grid.step(action)
-				state=next_state
-				place=next_place
-				#if k==1020:
-					#print(outputs[0],Qvalue[0],TDtarget[0])
-				#	grid.plot2(state,place[0],place[1])
-				if over:
-					break
-			total_reward+=grid.total_reward+0.0
-			print(grid.total_reward)
-			if x%5==0:
-				print(x)
+		print(evaluate(grid,vinPolicy,iters=200))
 		
-		print total_reward/iters,time.time()-time2
-	
-	
+		#print total_reward/iters,time.time()-time2

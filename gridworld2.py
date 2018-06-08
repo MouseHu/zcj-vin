@@ -7,8 +7,8 @@ class Obstacle2(object):
         self.height=height
         self.num=0# number of obstacles
         self.obstacles=[]
-        #self.dir_list=[[-1,1],[0,1],[1,1],[-1,0],[0,0],[1,0],[-1,-1],[0,-1],[1,-1]]
-	self.dir_list=[[-1,0], [1,0], [0,1], [0,-1] ,[-1,1], [-1,-1], [1,1], [1,-1]]
+        self.dir_list=[[-1,1],[0,1],[1,1],[-1,0],[0,0],[1,0],[-1,-1],[0,-1],[1,-1]]
+	#self.dir_list=[[-1,0], [1,0], [0,1], [0,-1] ,[-1,1], [-1,-1], [1,1], [1,-1]]
 	self.moving=moving
 	self.boundary=boundary
         for i in range(nobstacle):
@@ -45,9 +45,9 @@ class Obstacle2(object):
         return
 class GridWorld2_8dir(object):#8dir
     def __init__(self,width=10,height=10,nobstacle=3,moving=True,boundary=True):
-        #self.dir_list=[[-1,1],[0,1],[1,1],[-1,0],[0,0],[1,0],[-1,-1],[0,-1],[1,-1]]#0 up 1 down 2 left 3 right
+        self.dir_list=[[-1,1],[0,1],[1,1],[-1,0],[0,0],[1,0],[-1,-1],[0,-1],[1,-1]]#0 up 1 down 2 left 3 right
         #self.dir_list=[[-1,1],[0,1],[1,1],[-1,0],[1,0],[-1,-1],[0,-1],[1,-1]]
-	self.dir_list=[[-1,0], [1,0], [0,1], [0,-1] ,[-1,1], [-1,-1], [1,1], [1,-1]]
+	#self.dir_list=[[-1,0], [1,0], [0,1], [0,-1] ,[-1,1], [-1,-1], [1,1], [1,-1]]
         self.width=width
         self.height=height
         self.moving=moving
@@ -82,21 +82,21 @@ class GridWorld2_8dir(object):#8dir
         
     def status(self):#inbulid
         reward_map=np.full((self.width,self.height),0)
-        obstacle_map=np.full((self.width,self.height),0)
+        obstacle_map=np.full((self.width,self.height),1)
         #array[self.place]=1
         #print(self.init_place, array[self.init_place])
         reward_map[self.goal_place]=self.goal_reward#prior knewledge
         for ob in self.obstacles.obstacles:
             #print(ob)
-            obstacle_map[ob]=1
+            obstacle_map[ob]=0
         #print(array)
 	if self.boundary:	
 		for i in range(self.height):
-			obstacle_map[0,i]=1
-			obstacle_map[self.width-1,i]=1
+			obstacle_map[0,i]=0
+			obstacle_map[self.width-1,i]=0
 		for i in range(self.width):
-			obstacle_map[i,0]=1
-			obstacle_map[i,self.height-1]=1
+			obstacle_map[i,0]=0
+			obstacle_map[i,self.height-1]=0
         return [reward_map,obstacle_map]
     
     def show(self):
@@ -227,9 +227,9 @@ class GridWorld2_8dir(object):#8dir
             y1=np.array([j]*len(x))
             y2=np.array([j+1]*len(x))
             for i in range(self.width):
-                if obstacle[i][j]==0 and reward[i,j]==0:
+                if obstacle[i][j]==1 and reward[i,j]==0:
                     continue
-                if obstacle[i][j]==1:
+                if obstacle[i][j]==0:
                     plt.fill_between(x,y1,y2,where=(i<=x) & (x<=i+1),facecolor='black')
                 elif reward[i][j] == self.goal_reward:
                     plt.fill_between(x,y1,y2,where=(i<=x) & (x<=i+1),facecolor='red')
