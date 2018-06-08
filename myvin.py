@@ -33,7 +33,7 @@ class VIN(nn.Module):
 	    stride=1,
 	    padding=1,
 	    bias=False)
-	self.fc = nn.Linear(in_features=config.l_q, out_features=9, bias=False)
+	self.fc = nn.Linear(in_features=config.l_q, out_features=8, bias=False)
 	self.w = Parameter(
 	    torch.randn(config.l_q, 1, 3, 3), requires_grad=True)
 	self.sm = nn.Softmax(dim=1)

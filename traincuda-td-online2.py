@@ -12,11 +12,11 @@ import time
 import sys
 import itertools
 def randomWalk(status,place):
-    return np.random.randint(9)
+    return np.random.randint(8)
 
 def vinPolicy(status,place):
     if np.random.random()<e:
-        action=np.random.randint(9)
+        action=np.random.randint(8)
         return action
     S1=torch.Tensor([place[0]]).cuda()
     S2=torch.Tensor([place[1]]).cuda()
@@ -121,7 +121,7 @@ if len(sys.argv)>1:
 with torch.cuda.device(device):
 	
 	VIN=myvin.VIN(myvin.Config()).cuda()
-	#VIN.load_state_dict(torch.load("model2020.pkl"))
+	VIN.load_state_dict(torch.load("model/vin_8x8.pth"))
 	print(VIN)
 	oldVIN=myvin.VIN(myvin.Config()).cuda()
 	oldVIN.load_state_dict(VIN.state_dict())
@@ -149,7 +149,7 @@ with torch.cuda.device(device):
 	for k in range(episodes):    
 	    #step	
 	    #rewards=[]
-	    #e=50.0/(k+50)
+	    e=0.1/(k+1)
 	
 	    state,place,reward,over=grid.reset()
 	    #print("begin")
@@ -201,7 +201,7 @@ with torch.cuda.device(device):
 	#evaluate(grid,vinPolicy)
 	    
 	    if k%100==20:  
-		torch.save(VIN.state_dict(),"model/model"+str(k)+".pkl") 
+		torch.save(VIN.state_dict(),"model/model-8-"+str(k)+".pkl") 
 		print("begin eval") 
 		iters=10
 		#print(evaluate(grid,vinPolicy,iters=100))#its a bad policy :(

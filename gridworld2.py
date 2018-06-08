@@ -7,7 +7,8 @@ class Obstacle2(object):
         self.height=height
         self.num=0# number of obstacles
         self.obstacles=[]
-        self.dir_list=[[-1,1],[0,1],[1,1],[-1,0],[0,0],[1,0],[-1,-1],[0,-1],[1,-1]]
+        #self.dir_list=[[-1,1],[0,1],[1,1],[-1,0],[0,0],[1,0],[-1,-1],[0,-1],[1,-1]]
+	self.dir_list=[[-1,0], [1,0], [0,1], [0,-1] ,[-1,1], [-1,-1], [1,1], [1,-1]]
 	self.moving=moving
 	self.boundary=boundary
         for i in range(nobstacle):
@@ -44,8 +45,9 @@ class Obstacle2(object):
         return
 class GridWorld2_8dir(object):#8dir
     def __init__(self,width=10,height=10,nobstacle=3,moving=True,boundary=True):
-        self.dir_list=[[-1,1],[0,1],[1,1],[-1,0],[0,0],[1,0],[-1,-1],[0,-1],[1,-1]]#0 up 1 down 2 left 3 right
-        
+        #self.dir_list=[[-1,1],[0,1],[1,1],[-1,0],[0,0],[1,0],[-1,-1],[0,-1],[1,-1]]#0 up 1 down 2 left 3 right
+        #self.dir_list=[[-1,1],[0,1],[1,1],[-1,0],[1,0],[-1,-1],[0,-1],[1,-1]]
+	self.dir_list=[[-1,0], [1,0], [0,1], [0,-1] ,[-1,1], [-1,-1], [1,1], [1,-1]]
         self.width=width
         self.height=height
         self.moving=moving
