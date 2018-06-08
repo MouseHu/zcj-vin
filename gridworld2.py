@@ -57,11 +57,15 @@ class GridWorld2_8dir(object):#8dir
         self.reset()    
     def reset(self):
         while True:
-            self.init_place=(np.random.randint(self.width),np.random.randint(self.height))
-            self.goal_place=(np.random.randint(self.width),np.random.randint(self.height))
+	    if self.boundary:
+		c=1
+	    else:
+		c=0
+            self.init_place=(np.random.randint(c,self.width-c),np.random.randint(c,self.height-c))
+            self.goal_place=(np.random.randint(c,self.width-c),np.random.randint(c,self.height-c))
             #while self.goal_place==self.init_place:
             #    self.goal_place=(np.random.randint(width),np.random.randint(height))
-            if (abs(self.init_place[0]-self.goal_place[0])+abs(self.init_place[1]-self.goal_place[1]))>math.sqrt(self.width**2+self.height**2):
+            if (abs(self.init_place[0]-self.goal_place[0])+abs(self.init_place[1]-self.goal_place[1]))>math.sqrt((self.width-2*c)**2+(self.height-2*c)**2):
                 break
         #print(abs(self.init_place[0]-self.goal_place[0])+abs(self.init_place[1]-self.goal_place[1]))
         self.obstacles=Obstacle2(self.width,self.height,self.nobstacle,[self.init_place,self.goal_place],self.moving,self.boundary)
@@ -99,6 +103,14 @@ class GridWorld2_8dir(object):#8dir
             #print(ob)
             array[ob]=-1
         #print(array)
+	if self.boundary:	
+
+		for i in range(self.height):
+			array[0,i]=-1
+			array[self.width-1,i]=-1
+		for i in range(self.width):
+			array[i,0]=-1
+			array[i,self.height-1]=-1
         return array
     
     def step(self,direction):
@@ -110,7 +122,7 @@ class GridWorld2_8dir(object):#8dir
         self.obstacles.move([self.place,self.goal_place])
         
         assert (0<=direction and direction<9)
-	if self.boundary:
+	if self.boundary is not True:
         	new_place=(max(min(self.place[0]+self.dir_list[direction][0],self.width-1),0),max(min(self.place[1]+self.dir_list[direction][1],self.height-1),0))
 	else:
 		new_place=(max(min(self.place[0]+self.dir_list[direction][0],self.width-2),1),max(min(self.place[1]+self.dir_list[direction][1],self.height-2),1))
@@ -185,5 +197,33 @@ class GridWorld2_8dir(object):#8dir
                     plt.fill_between(x,y1,y2,where=(i<=x) & (x<=i+1),facecolor='blue')
                 else:
                     plt.fill_between(x,y1,y2,where=(i<=x) & (x<i+1),facecolor='red')
+        plt.show()
+        return
+    def plot2(self,status,s1,s2):
+        plt.figure(figsize=(5, 5))
+        ax=plt.gca()  
+        ax.set_xticks(np.linspace(0,self.width,self.width+1))  
+        ax.set_yticks(np.linspace(0,self.height,self.height+1))  
+        
+        plt.grid(True)  
+        plt.xlim((0, self.width))
+
+        plt.ylim((0, self.height))
+        reward=status[0]
+	reward[s1,s2]=1
+	obstacle=status[1]
+        x=np.arange(0, self.width, 0.01)
+        for j in range(self.height):
+            y1=np.array([j]*len(x))
+            y2=np.array([j+1]*len(x))
+            for i in range(self.width):
+                if obstacle[i,j]==0 and reward[i,j]==0:
+                    continue
+                if obstacle[i,j]==-1:
+                    plt.fill_between(x,y1,y2,where=(i<=x) & (x<=i+1),facecolor='black')
+                elif reward[i,j] == self.goal_reward:
+                    plt.fill_between(x,y1,y2,where=(i<=x) & (x<=i+1),facecolor='red')
+                else:
+                    plt.fill_between(x,y1,y2,where=(i<=x) & (x<i+1),facecolor='blue')
         plt.show()
         return

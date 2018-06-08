@@ -44,7 +44,7 @@ def vinPredict(status,place,vin):
     q1=q1.cuda()
     
     return q1
-def update(experience,vin,oldvin):
+def update(experience,vin,oldvin,p=False):
 	#(action,state,place,next_state,next_place,reward,over)
 	X=[]
 	S1=[]
@@ -58,7 +58,8 @@ def update(experience,vin,oldvin):
 	for j in range(myvin.Config().batch_size):# sample experience from replay
 	    x=np.random.randint(len(experience))
 	    #status,place,reward,over,action
- 
+ 	    while experience[x][6]==True:
+		x=np.random.randint(len(experience))
 	    Y.append(experience[x][5])
 	    action.append(experience[x][0])
 	    X.append(experience[x][1])
@@ -81,6 +82,7 @@ def update(experience,vin,oldvin):
 
 
 	oldoutputs, _ = oldvin(oldX,oldS1,oldS2 ,  myvin.Config())
+	oldouputs=oldoutputs.detach()
 	Qmax=(torch.max(oldoutputs,dim=1)[0]).squeeze().cuda()
 
 	outputs, _ = vin(X,S1,S2 ,  myvin.Config())
@@ -95,6 +97,8 @@ def update(experience,vin,oldvin):
 	loss.backward()
 	# Update params
 	optimizer.step()
+	if p:
+		print(X[0],S1[0],S2[0],outputs[0],Qvalue[0],TDtarget[0])
 	return loss
 def evaluate(env,policy,iters=5000):
 	total_reward=0
@@ -117,18 +121,19 @@ with torch.cuda.device(device):
 	
 	VIN=myvin.VIN(myvin.Config()).cuda()
 	print(VIN)
-	oldVIN=copy.deepcopy(VIN).cuda()
+	oldVIN=myvin.VIN(myvin.Config()).cuda()
+	oldVIN.load_state_dict(VIN.state_dict())
 	grid=gw.GridWorld2_8dir(8,8,nobstacle=4,moving=False)
 
-	maxStep=2000000
+	maxStep=1000000
 	episodes=10000
 	gamma=0.99
-	Tmax=5000
+	Tmax=1000
 	replay=[]
-	max_exp=50000
-	learning_begin=20000
+	max_exp=5000
+	learning_begin=1000
 	learning_freq=4
-	update_freq=5000
+	update_freq=200
 	e=0.1
 	experience=[]
 	print("here")
@@ -143,11 +148,12 @@ with torch.cuda.device(device):
 	    #step	
 	    #rewards=[]
 	    e=50.0/(k+50)
-
+	
 	    state,place,reward,over=grid.reset()
 	    #print("begin")
 	   # time1=time.time()
-	    
+	    #if k%10==0:
+	    #	grid.plot()
 	    time1=time.time()	
 	    for i in range(Tmax):
 	        count+=1
@@ -165,7 +171,9 @@ with torch.cuda.device(device):
 		if count%learning_freq==0 :
 		    loss=0
 		    for x in range(3):		
-		    	loss+=update(experience,VIN,oldVIN)
+		    	loss+=update(experience,VIN,oldVIN)#,True)
+		    if count%1000==0:
+			update(experience,VIN,oldVIN,True)
 		    #s+=loss
 		    #l+=1
 		    #if l%100==0:
@@ -184,6 +192,7 @@ with torch.cuda.device(device):
 			
 	    if k%10==0:
 		print("episode",k,time.time()-time1,i,grid.total_reward)
+		
 	    if count>maxStep:
 		break
 	#evaluate(grid,randomWalk)
