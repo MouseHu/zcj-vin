@@ -80,4 +80,4 @@ class Config(object):
 	self.batch_size=32
 	self.k=3
 	self.imsize=8
-	self.lr=5e-4
+	self.lr=5e-6

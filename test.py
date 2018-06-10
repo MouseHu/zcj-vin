@@ -52,7 +52,7 @@ if len(sys.argv)>1:
 with torch.cuda.device(device):
 	
 	VIN=myvin.VIN(myvin.Config()).cuda()
-	VIN.load_state_dict(torch.load("model/moving-model-9-5920.pkl"))#3920
+	VIN.load_state_dict(torch.load("model2/moving-model-9-3920.pkl"))#3920
 	print(VIN)
 	oldVIN=myvin.VIN(myvin.Config()).cuda()
 	oldVIN.load_state_dict(VIN.state_dict())
@@ -60,6 +60,7 @@ with torch.cuda.device(device):
 	e=0
 	#print(evaluate(grid,vinPolicy,1000))
 	print(evaluate(grid,randomWalk))
-	print(evaluate(grid,vinPolicy,iters=1000))
+	for i in range(10):
+		print(evaluate(grid,vinPolicy,iters=1000))
 		
 		#print total_reward/iters,time.time()-time2
